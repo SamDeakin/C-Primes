@@ -26,7 +26,7 @@ public:
     void start();
 
     // ----- End Construction API -----
-    // ----- Thread API -----
+    // ----- Worker API -----
 
     // Try to work from the work queue
     // If this returns false but m_addingWork is still true then try again
@@ -37,21 +37,21 @@ public:
 
     // Check if a number is prime
     // This is only correct for numbers between m_checkpoint[1] and m_checkpoint[2]
-    void isPrime(uint64_t value);
+    bool isPrime(uint64_t value);
 
     // Will be true as long as more work is being added during this checkpoint
     std::atomic_bool m_addingWork;
 
-    // Threads should use this CV to wait when they are done work and work is not being added
-    std::condition_variable m_threadCV;
+    // Workers should use this CV to wait when they are done work and work is not being added
+    std::condition_variable m_workerCV;
 
     // Acquire this mutex before doing anything with m_poolCV
     std::mutex m_mutex;
 
-    // Threads should signal this CV before waiting on m_threadCV
+    // Workers should signal this CV before waiting on m_workerCV
     std::condition_variable m_poolCV;
 
-    // ----- End Thread API -----
+    // ----- End Worker API -----
 private:
     // Add work to the work queue
     void addWork(uint64_t next);
@@ -61,17 +61,19 @@ private:
      * m_resultsTable is set to newResults.
      * m_nonPrime is set to m_resultsTable.
      * m_nonPrime is returned
-     * This should only be called when all threads have finished their work and are waiting on m_threadCV
+     * This should only be called when all threads have finished their work and are waiting on m_workerCV
      */
     std::unique_ptr<tbb::concurrent_unordered_set<uint64_t>> swapResults(std::unique_ptr<tbb::concurrent_unordered_set<uint64_t>> newResults);
 
-    // Update m_checkpoints and all thread checkpoints at the same time
+    // Update m_checkpoints and all worker checkpoints at the same time
     void updateCheckpoints();
 
     // The current queue of work to be done
     tbb::concurrent_queue<uint64_t> m_workQueue;
 
+    // The result table currently being written to
     std::unique_ptr<tbb::concurrent_unordered_set<uint64_t>> m_resultsTable;
+    // The result table for reading only. Every contained element is not prime
     std::unique_ptr<tbb::concurrent_unordered_set<uint64_t>> m_nonPrime;
 
     // The first number to check for primeness
@@ -80,7 +82,7 @@ private:
     uint64_t m_endRange;
 
     // The current checkpoints
-    // [checkpoint[0], checkpoint[1]) is the range that threads are processing
+    // [checkpoint[0], checkpoint[1]) is the range that workers are processing
     // [checkpoint[1], checkpoint[2]) is the range that can be checked for primeness
     // [checkpoint[2], checkpoint[3]) is the range that will be printed to stdout this iteration
     uint64_t m_checkpoint[4];
