@@ -1,7 +1,5 @@
 #include "ThreadPool.hpp"
 
-#include <iostream>
-
 static const uint64_t CHECKPOINT_SIZE = 20; // TODO This number is good for testing but should be larger or configurable
 
 ThreadPool::ThreadPool(uint64_t start, uint64_t end, std::size_t numThreads) :
@@ -56,6 +54,7 @@ void ThreadPool::start() {
         m_addingWork.store(false, std::memory_order_relaxed);
 
         // drain toBePrinted
+        // TODO
 
         // wait for Workers
         waitForWorkers();
@@ -66,13 +65,12 @@ void ThreadPool::start() {
         auto newTable = std::make_unique<tbb::concurrent_unordered_set<uint64_t>>();
         toBePrinted = swapResults(std::move(newTable));
 
-        // unset done
+        // Set that work is being added again
         std::atomic_thread_fence(std::memory_order_release);
-        m_addingWork.store(false, std::memory_order_relaxed);
+        m_addingWork.store(true, std::memory_order_relaxed);
     }
     // set done all
-    std::atomic_thread_fence(std::memory_order_release);
-    m_threadsShouldExit.store(true, std::memory_order_relaxed);
+    m_threadsShouldExit.store(true, std::memory_order_release);
 
     // signal Workers to wake up and begin processing. They will see that they should exit and join up.
     m_workerCV.notify_all();
@@ -80,6 +78,7 @@ void ThreadPool::start() {
     // drain toBePrinted
     // drain m_nonPrime
     // drain m_resultsTable
+    // TODO
 
     // cleanup
     for (auto& worker : m_workers) {
@@ -89,6 +88,10 @@ void ThreadPool::start() {
 
 bool ThreadPool::getWork(uint64_t& out) {
     return m_workQueue.try_pop(out);
+}
+
+bool ThreadPool::empty() {
+    return m_workQueue.empty();
 }
 
 void ThreadPool::setResult(uint64_t value) {
@@ -122,7 +125,9 @@ void ThreadPool::updateCheckpoint() {
 }
 
 void ThreadPool::waitForWorkers() {
-    // TODO
+    for (auto& worker : m_workers) {
+        worker->waitUntilDone();
+    }
 }
 
 bool ThreadPool::doneProcessing() {

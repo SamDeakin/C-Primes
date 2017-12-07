@@ -32,6 +32,9 @@ public:
     // If this returns false but m_addingWork is still true then try again
     bool getWork(uint64_t& out);
 
+    // Check if the work queue is empty
+    bool empty();
+
     // Add a number to the results table
     void setResult(uint64_t vaue);
 
@@ -39,6 +42,7 @@ public:
     // This is only correct for numbers between m_checkpoint[1] and m_checkpoint[2]
     bool isPrime(uint64_t value);
 
+    // TODO exposed synchronization primitives shouldn't be prefixed with m_. Maybe not exposed at all.
     // Will be true as long as more work is being added during this checkpoint
     std::atomic_bool m_addingWork;
 
@@ -46,10 +50,8 @@ public:
     std::atomic_bool m_threadsShouldExit;
 
     // Workers should use this CV to wait when they are done work and work is not being added
-    std::condition_variable m_workerCV;
-
-    // Acquire this mutex before doing anything with m_poolCV
-    std::mutex m_mutex;
+    // The type must have the _any postfix or this will throw the second mutliple threads acquire it
+    std::condition_variable_any m_workerCV;
 
     // Workers should signal this CV before waiting on m_workerCV
     std::condition_variable m_poolCV;

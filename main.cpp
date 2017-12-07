@@ -8,7 +8,7 @@ int main(int argc, const char** argv) {
     // TODO Increase these when the program is more stable
     uint64_t defaultStart = 2;
     uint64_t defaultEnd = 100;
-    std::size_t defaultNumThreads = 1;
+    std::size_t defaultNumThreads = 2;
 
     // Override these for command line arguments
     for (int i = 1; i + 1 < argc; i = i + 2) {
