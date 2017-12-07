@@ -54,6 +54,12 @@ public:
     // Workers should signal this CV before waiting on m_workerCV
     std::condition_variable m_poolCV;
 
+    // The current checkpoints
+    // [checkpoint[0], checkpoint[1]) is the range that workers are processing
+    // [checkpoint[1], checkpoint[2]) is the range that can be checked for primeness
+    // [checkpoint[2], checkpoint[3]) is the range that will be printed to stdout this iteration
+    uint64_t m_checkpoint[4];
+
     // ----- End Worker API -----
 private:
     // Add work to the work queue
@@ -90,14 +96,8 @@ private:
     // One after the last number to check for primeness
     uint64_t m_endRange;
 
-    // The current checkpoints
-    // [checkpoint[0], checkpoint[1]) is the range that workers are processing
-    // [checkpoint[1], checkpoint[2]) is the range that can be checked for primeness
-    // [checkpoint[2], checkpoint[3]) is the range that will be printed to stdout this iteration
-    uint64_t m_checkpoint[4];
-
     // The running threads
-    std::vector<Worker> m_workers;
+    std::vector<std::unique_ptr<Worker>> m_workers;
 };
 
 #endif // __THREAD_POOL_HPP__

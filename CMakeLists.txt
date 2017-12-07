@@ -8,7 +8,7 @@ tbb_build(TBB_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/lib/tbb CONFIG_DIR TBB_DIR)
 find_package(TBB REQUIRED)
 
 set(SOURCE_FILES
-        main.cpp)
+        main.cpp
         Worker.cpp
         ThreadPool.cpp)
 

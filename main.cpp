@@ -7,7 +7,7 @@
 int main(int argc, const char** argv) {
     // TODO Increase these when the program is more stable
     uint64_t defaultStart = 2;
-    uint64_t defaultEnd = 20;
+    uint64_t defaultEnd = 100;
     std::size_t defaultNumThreads = 1;
 
     // Override these for command line arguments
@@ -31,8 +31,6 @@ int main(int argc, const char** argv) {
             std::cout << "Unrecognized argument " << argv[i] << std::endl;
         }
     }
-
-    std::cout << defaultStart << " " << defaultEnd << " " << defaultNumThreads << std::endl;
 
     ThreadPool pool(defaultStart, defaultEnd, defaultNumThreads);
     pool.start();

@@ -1,23 +1,25 @@
 #include "ThreadPool.hpp"
 
+#include <iostream>
+
 static const uint64_t CHECKPOINT_SIZE = 20; // TODO This number is good for testing but should be larger or configurable
 
 ThreadPool::ThreadPool(uint64_t start, uint64_t end, std::size_t numThreads) :
     m_addingWork(false),
     m_threadsShouldExit(false),
+    m_checkpoint{start, start, start, start},
     m_resultsTable(nullptr),
     m_nonPrime(nullptr),
     m_startRange(start),
-    m_endRange(end),
-    m_checkpoint{start, start, start, start} {
+    m_endRange(end) {
     // Create Workers
     for (int i = 0; i < numThreads; i++) {
-        // TODO add worker ctor parameters after writing that api
-        m_workers.emplace_back();
+        m_workers.push_back(std::make_unique<Worker>(*this));
     }
 }
 
 ThreadPool::~ThreadPool() {
+    m_workers.clear();
 }
 
 void ThreadPool::start() {
@@ -31,19 +33,21 @@ void ThreadPool::start() {
     updateCheckpoint();
 
     // Start the workers running
-    for (Worker& w : m_workers) {
-        w.start();
+    for (auto& worker : m_workers) {
+        worker->start();
     }
 
     while (!doneProcessing()) {
         // Signal workers to wake up and begin processing
         m_workerCV.notify_all();
 
-        uint64_t checkpoint_try = m_checkpoint[0] / 3 + 1;
+        // The last number we need to process is exactly checkpoint / 3 so cut off at 1 over to account for int rounding
+        uint64_t checkpointEnd = m_checkpoint[0] / 3 + 1;
+        uint64_t endOfLast = m_checkpoint[1] / 3 + 1;
         for (
             // Start at first odd number after end of last checkpoint
-            uint64_t i = m_checkpoint[1] + ((m_checkpoint[1] + 1) % 2);
-            i < checkpoint_try; // Iterate over every number less than sqrt(checkpoint)
+            uint64_t i = endOfLast + ((endOfLast + 1) % 2);
+            i < checkpointEnd; // Iterate over every number less than sqrt(checkpoint)
             i = i + 2 // Iterate over odd numbers
             ) {
             addWork(i);
@@ -78,8 +82,8 @@ void ThreadPool::start() {
     // drain m_resultsTable
 
     // cleanup
-    for (Worker& w : m_workers) {
-        w.finish();
+    for (auto& worker : m_workers) {
+        worker->finish();
     }
 }
 
@@ -88,11 +92,11 @@ bool ThreadPool::getWork(uint64_t& out) {
 }
 
 void ThreadPool::setResult(uint64_t value) {
-    m_resultsTable.insert(value);
+    m_resultsTable->insert(value);
 }
 
 bool ThreadPool::isPrime(uint64_t value) {
-    return m_nonPrime.count(value);
+    return m_nonPrime->count(value);
 }
 
 void ThreadPool::addWork(uint64_t next) {
@@ -114,7 +118,7 @@ void ThreadPool::updateCheckpoint() {
     m_checkpoint[3] = m_checkpoint[2];
     m_checkpoint[2] = m_checkpoint[1];
     m_checkpoint[1] = m_checkpoint[0];
-    m_checkpoint[0] = min(end, m_endRange);
+    m_checkpoint[0] = std::min(end, m_endRange);
 }
 
 void ThreadPool::waitForWorkers() {
