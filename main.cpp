@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <iostream>
 
-// #include "ThreadPool.hpp"
+#include "ThreadPool.hpp"
 
 int main(int argc, const char** argv) {
     // TODO Increase these when the program is more stable
@@ -34,6 +34,6 @@ int main(int argc, const char** argv) {
 
     std::cout << defaultStart << " " << defaultEnd << " " << defaultNumThreads << std::endl;
 
-    // ThreadPool pool(defaultStart, defaultEnd, defaultNumThreads);
-    // pool.start();
+    ThreadPool pool(defaultStart, defaultEnd, defaultNumThreads);
+    pool.start();
 }

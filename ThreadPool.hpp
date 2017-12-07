@@ -42,6 +42,9 @@ public:
     // Will be true as long as more work is being added during this checkpoint
     std::atomic_bool m_addingWork;
 
+    // Will be true when threads should exit to join
+    std::atomic_bool m_threadsShouldExit;
+
     // Workers should use this CV to wait when they are done work and work is not being added
     std::condition_variable m_workerCV;
 
@@ -66,7 +69,13 @@ private:
     std::unique_ptr<tbb::concurrent_unordered_set<uint64_t>> swapResults(std::unique_ptr<tbb::concurrent_unordered_set<uint64_t>> newResults);
 
     // Update m_checkpoints and all worker checkpoints at the same time
-    void updateCheckpoints();
+    void updateCheckpoint();
+
+    // Wait for all worker threads to be waiting
+    void waitForWorkers();
+
+    // True if we are done processing new numbers
+    bool doneProcessing();
 
     // The current queue of work to be done
     tbb::concurrent_queue<uint64_t> m_workQueue;
