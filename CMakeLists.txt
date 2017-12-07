@@ -3,15 +3,15 @@ project(C+Primes)
 
 set(CMAKE_CXX_STANDARD 11)
 
+include(${CMAKE_CURRENT_SOURCE_DIR}/lib/tbb/cmake/TBBBuild.cmake)
+tbb_build(TBB_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/lib/tbb CONFIG_DIR TBB_DIR)
+find_package(TBB REQUIRED)
+
 set(SOURCE_FILES
-        main.cpp
-        Worker.cpp
-        ThreadPool.cpp)
+        main.cpp)
+        #Worker.cpp
+        #ThreadPool.cpp)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/tbb/include)
+add_executable(CPPrimes ${SOURCE_FILES})
 
-set(TBB_PATH_HINT ${CMAKE_CURRENT_SOURCE_DIR}/lib/tbb/build/*/)
-find_file(TBB_LIB NAMES libtbb.dylib HINTS ${TBB_PATH_HINT} NO_DEFAULT_PATH)
-
-add_executable(CPrimes ${SOURCE_FILES})
-target_link_libraries(CPrimes ${TBB_LIB})
+target_link_libraries(CPPrimes ${TBB_IMPORTED_TARGETS})
