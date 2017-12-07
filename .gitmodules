@@ -1,3 +1,4 @@
 [submodule "lib/tbb"]
-	path = lib/tbb
-	url = https://github.com/01org/tbb.git
+    path = lib/tbb
+    url = https://github.com/01org/tbb.git
+    ignore = dirty
