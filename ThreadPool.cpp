@@ -1,5 +1,7 @@
 #include "ThreadPool.hpp"
 
+#include <iostream>
+
 static const uint64_t CHECKPOINT_SIZE = 20; // TODO This number is good for testing but should be larger or configurable
 
 ThreadPool::ThreadPool(uint64_t start, uint64_t end, std::size_t numThreads) :
@@ -13,6 +15,17 @@ ThreadPool::ThreadPool(uint64_t start, uint64_t end, std::size_t numThreads) :
     // Create Workers
     for (int i = 0; i < numThreads; i++) {
         m_workers.push_back(std::make_unique<Worker>(*this));
+    }
+
+    // For our base case don't process below 3
+    if (start < 3) {
+        m_checkpoint[0] = 3;
+        m_checkpoint[1] = 3;
+        m_checkpoint[2] = 3;
+        m_checkpoint[3] = 3;
+
+        // This algorithm won't find 2, but we know to include it here.
+        std::cout << 2 << std::endl;
     }
 }
 

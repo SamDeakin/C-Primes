@@ -81,8 +81,28 @@ void Worker::doWork() {
 }
 
 void Worker::process(uint64_t value) {
-    // TODO
-    std::cout << "p" << value << std::endl;
+    uint64_t start_range = m_parent.m_checkpoint[1];
+    uint64_t end_range = m_parent.m_checkpoint[0];
+
+    // Increment by this amount to skip even multiples
+    uint64_t interval = 2 * value;
+
+    // We calculate the start to be the first odd multiple of value larger than start_range
+    uint64_t multiple = start_range / value + 1;
+    multiple += 1 - (multiple % 2); // Adjust to be next odd number
+
+    // We don't want to process value ever
+    if (multiple == 1) {
+        multiple += 2;
+    }
+
+    std::cout << "p: " << value << " " << start_range << " " << end_range << " " << multiple << ":";
+
+    for (uint64_t i = multiple * value; i <= end_range; i = i + interval) {
+        m_parent.setResult(i);
+        std::cout << " " << i;
+    }
+    std::cout << std::endl;
 }
 
 bool Worker::shouldExit() {
