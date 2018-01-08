@@ -1,12 +1,13 @@
 #include <atomic>
+#include <iostream>
 
 #include "Worker.hpp"
 #include "ThreadPool.hpp"
 
-#include <iostream>
-
 Worker::Worker(ThreadPool& parent) :
+    m_start(false),
     m_waiting(false),
+    m_exit(false),
     m_parent(parent) {
 }
 
@@ -18,14 +19,26 @@ void Worker::start() {
 }
 
 void Worker::finish() {
+    {
+        std::unique_lock<std::mutex> lock(m_waitingMutex);
+        if (!m_exit) {
+            if (m_waiting) {
+                m_parent.m_workerCV.notify_all();
+            } else {
+                m_parent.m_poolCV.wait(lock);
+                m_parent.m_workerCV.notify_all();
+            }
+        }
+    }
     m_thread.join();
 }
 
 void Worker::waitUntilDone() {
     std::unique_lock<std::mutex> lock(m_waitingMutex);
-    while(!m_waiting) {
+    while(!m_waiting || m_start) {
         m_parent.m_poolCV.wait(lock);
     }
+    m_start = true;
 }
 
 void Worker::doWork() {
@@ -59,6 +72,12 @@ void Worker::doWork() {
 
         waitOnCV();
     }
+    {
+        // Signal that the thread is exiting.
+        std::lock_guard<std::mutex> lock(m_waitingMutex);
+        m_exit = true;
+        m_parent.m_poolCV.notify_all();
+    }
 }
 
 void Worker::process(uint64_t value) {
@@ -67,15 +86,14 @@ void Worker::process(uint64_t value) {
 }
 
 bool Worker::shouldExit() {
-    return m_parent.m_threadsShouldExit.load(std::memory_order_acquire);
+    bool p = m_parent.m_threadsShouldExit.load(std::memory_order_acquire);
+    return p;
 }
 
 bool Worker::addingWork() {
     bool adding = m_parent.m_addingWork.load(std::memory_order_relaxed);
     std::atomic_thread_fence(std::memory_order_acquire);
-
-    bool empty = !m_parent.empty();
-    return adding || empty;
+    return adding || !m_parent.empty();
 }
 
 void Worker::waitOnCV() {
@@ -84,4 +102,5 @@ void Worker::waitOnCV() {
     m_parent.m_poolCV.notify_all();
     m_parent.m_workerCV.wait(lock);
     m_waiting = false;
+    m_start = false;
 }

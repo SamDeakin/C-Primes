@@ -50,6 +50,7 @@ void ThreadPool::start() {
             ) {
             addWork(i);
         }
+
         std::atomic_thread_fence(std::memory_order_release);
         m_addingWork.store(false, std::memory_order_relaxed);
 
@@ -69,7 +70,9 @@ void ThreadPool::start() {
         std::atomic_thread_fence(std::memory_order_release);
         m_addingWork.store(true, std::memory_order_relaxed);
     }
+
     // set done all
+    m_addingWork.store(false, std::memory_order_release);
     m_threadsShouldExit.store(true, std::memory_order_release);
 
     // signal Workers to wake up and begin processing. They will see that they should exit and join up.
@@ -80,7 +83,10 @@ void ThreadPool::start() {
     // drain m_resultsTable
     // TODO
 
-    // cleanup
+    // Signal all workers to wake up. They will see that they should exit.
+    m_workerCV.notify_all();
+
+    // Wait for them to exit.
     for (auto& worker : m_workers) {
         worker->finish();
     }

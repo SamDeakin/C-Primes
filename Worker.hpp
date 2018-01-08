@@ -22,6 +22,9 @@ public:
 
     // The calling thread waits on the parents m_poolCV until this worker is done all it's work
     void waitUntilDone();
+
+    // A boolean to protect from the main thread finishing a run loop before this thread has woken up.
+    volatile bool m_start;
 private:
     // The main running loop that will be performed on m_thread
     // Communicates with m_parent to get work and return results
@@ -52,9 +55,12 @@ private:
     std::queue<uint64_t> m_savedWork;
 
     // True if this thread is waiting
-    bool m_waiting;
+    volatile bool m_waiting;
 
-    // A thread must acquire this lock to check m_waiting
+    // True if this thread has exit
+    volatile bool m_exit;
+
+    // A thread must acquire this lock to check any volatile flag variable in this class
     std::mutex m_waitingMutex;
 };
 
