@@ -48,6 +48,12 @@ void ThreadPool::start() {
         worker->start();
     }
 
+    // To account for offset starts we must queue every odd number between 3 and the start value / 3
+    uint64_t last = m_checkpoint[1] / 3 + 1;
+    for (uint64_t i = 3; i < last; i = i + 2) {
+        addWork(i);
+    }
+
     while (!doneProcessing()) {
         // Signal workers to wake up and begin processing
         m_workerCV.notify_all();
