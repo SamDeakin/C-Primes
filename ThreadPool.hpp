@@ -85,6 +85,11 @@ private:
     // True if we are done processing new numbers
     bool doneProcessing();
 
+    // A helper to drain a results table and flush it to stdout.
+    // Takes a reference to the table to be drained.
+    // Also takes the start and end range to check, to support draining tables without modifying m_checkpoint.
+    void drainResults(const std::unique_ptr<tbb::concurrent_unordered_set<uint64_t>>& table, uint64_t start_range, uint64_t end_range);
+
     // The current queue of work to be done
     tbb::concurrent_queue<uint64_t> m_workQueue;
 

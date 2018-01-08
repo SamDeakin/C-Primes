@@ -68,7 +68,7 @@ void ThreadPool::start() {
         m_addingWork.store(false, std::memory_order_relaxed);
 
         // drain toBePrinted
-        // TODO
+        drainResults(toBePrinted, m_checkpoint[3], m_checkpoint[2]);
 
         // wait for Workers
         waitForWorkers();
@@ -92,9 +92,10 @@ void ThreadPool::start() {
     m_workerCV.notify_all();
 
     // drain toBePrinted
+    drainResults(toBePrinted, m_checkpoint[3], m_checkpoint[2]);
     // drain m_nonPrime
-    // drain m_resultsTable
-    // TODO
+    drainResults(m_nonPrime, m_checkpoint[2], m_checkpoint[1]);
+    // m_resultsTable will not have any new work here, so we do not need to drain it.
 
     // Signal all workers to wake up. They will see that they should exit.
     m_workerCV.notify_all();
@@ -118,7 +119,7 @@ void ThreadPool::setResult(uint64_t value) {
 }
 
 bool ThreadPool::isPrime(uint64_t value) {
-    return m_nonPrime->count(value);
+    return !m_nonPrime->count(value);
 }
 
 void ThreadPool::addWork(uint64_t next) {
@@ -152,4 +153,17 @@ void ThreadPool::waitForWorkers() {
 bool ThreadPool::doneProcessing() {
     // We need to wait until after we are done processing all up until m_endRange.
     return m_checkpoint[1] == m_endRange;
+}
+
+void ThreadPool::drainResults(const std::unique_ptr<tbb::concurrent_unordered_set<uint64_t>>& table, uint64_t start_range, uint64_t end_range) {
+
+    for (
+        // Start at the first odd number greater than start_range.
+        uint64_t i = start_range + ((start_range + 1) % 2);
+        i < end_range;
+        i = i + 2) {
+        if (!table->count(i)) {
+            std::cout << i << std::endl;
+        }
+    }
 }
