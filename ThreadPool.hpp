@@ -54,7 +54,7 @@ public:
     std::condition_variable_any m_workerCV;
 
     // Workers should signal this CV before waiting on m_workerCV
-    std::condition_variable m_poolCV;
+    std::condition_variable_any m_poolCV;
 
     // The current checkpoints
     // [checkpoint[0], checkpoint[1]) is the range that workers are processing
