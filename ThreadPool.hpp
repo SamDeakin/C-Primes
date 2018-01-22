@@ -19,7 +19,7 @@ public:
     // Construct with the start and end range that should be checked for primeness
     // This will print every prime number in the range [start, end)
     // Will use numThreads threads to solve
-    ThreadPool(uint64_t start, uint64_t end, std::size_t numThreads);
+    ThreadPool(uint64_t start, uint64_t end, std::size_t numThreads, uint64_t checkpointSize);
     ~ThreadPool();
 
     // Call to begin processing
@@ -105,6 +105,9 @@ private:
 
     // The running threads
     std::vector<std::unique_ptr<Worker>> m_workers;
+
+    // The size step when updating checkpoints
+    uint64_t m_checkpointSize;
 };
 
 #endif // __THREAD_POOL_HPP__

@@ -2,16 +2,15 @@
 
 #include <iostream>
 
-static const uint64_t CHECKPOINT_SIZE = 20; // TODO This number is good for testing but should be larger or configurable
-
-ThreadPool::ThreadPool(uint64_t start, uint64_t end, std::size_t numThreads) :
+ThreadPool::ThreadPool(uint64_t start, uint64_t end, std::size_t numThreads, uint64_t checkpointSize) :
     m_addingWork(false),
     m_threadsShouldExit(false),
     m_checkpoint{start, start, start, start},
     m_resultsTable(nullptr),
     m_nonPrime(nullptr),
     m_startRange(start),
-    m_endRange(end) {
+    m_endRange(end),
+    m_checkpointSize(checkpointSize) {
     // Create Workers
     for (int i = 0; i < numThreads; i++) {
         m_workers.push_back(std::make_unique<Worker>(*this));
@@ -140,7 +139,7 @@ std::unique_ptr<tbb::concurrent_unordered_set<uint64_t>> ThreadPool::swapResults
 
 void ThreadPool::updateCheckpoint() {
     // Find the first odd number greater than the next checkpoint
-    uint64_t end = m_checkpoint[0] + CHECKPOINT_SIZE;
+    uint64_t end = m_checkpoint[0] + m_checkpointSize;
     end = end + 1 - (end % 2);
 
     // This is ok cause theres only 4 values. Avoid branching in a for loop.

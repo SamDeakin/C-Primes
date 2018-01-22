@@ -19,8 +19,10 @@ Build the executable with make
 `make CPPrimes`
 
 ## Command Line Arguments
-`-t <n>` Run with `n` threads. Default 2
+`-t <n>` Run with `n` threads. Default 4
 
 `-s <n>` Find numbers starting at `n`. Default 2
 
-`-e <n>` Find numbers ending at `n`. Default 100
+`-e <n>` Find numbers ending at `n`. Default 1000
+
+`-c <n>` Configure the checkpoint size, i.e. the size of the chunks of numbers that will be processed together. Default 500
